@@ -1,3 +1,18 @@
+# This file is part of Threadedtree.
+
+# Threadedtree is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+
+# Threadedtree is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Lesser General Public License for more details.
+
+# You should have received a copy of the GNU Lesser General Public License
+# along with threadedtree.  If not, see <http://www.gnu.org/licenses/>.
+
 from unittest import TestCase
 
 import random
@@ -17,6 +32,12 @@ class TestUnbalancedThreadedBST(TestCase):
 	@classmethod
 	def tearDown(self):
 		pass
+
+	def test_bad_root(self):
+		try:
+			tree = threadedtree.ThreadedTree(root=1)
+		except TypeError:
+			pass
 		
 	def test_insert(self):
 		for trial in xrange(self.trials):
@@ -25,7 +46,9 @@ class TestUnbalancedThreadedBST(TestCase):
 			for sample in test_suite:
 				tree.insert(sample)
 			test_suite.sort()
-			assert test_suite == list(tree.in_order())
+			assert test_suite == list(tree)
+		# Try inserting an item that doesn't implement comparisons
+		tree.insert(lambda x: x)
 
 	def test_insert_with_duplicates(self):
 		for trial in xrange(self.trials):
@@ -35,7 +58,7 @@ class TestUnbalancedThreadedBST(TestCase):
 			for sample in test_suite:
 				tree.insert(sample)
 			test_suite.sort()
-			assert test_suite != list(tree.in_order())
+			assert test_suite != list(tree)
 
 	def test_create_with_iterable(self):
 		import copy
@@ -44,8 +67,8 @@ class TestUnbalancedThreadedBST(TestCase):
 			tree = threadedtree.ThreadedTree(test_suite)
 			another_tree = threadedtree.ThreadedTree(tree)
 			test_suite.sort()
-			assert test_suite == list(tree.in_order())
-			assert test_suite == list(another_tree.in_order())
+			assert test_suite == list(tree)
+			assert test_suite == list(another_tree)
 		try:
 			tree = threadedtree.ThreadedTree(1) #Try to initialize with non-iterable
 		except TypeError:
@@ -62,11 +85,26 @@ class TestUnbalancedThreadedBST(TestCase):
 			for val_to_delete in vals_to_delete:
 				test_suite.remove(val_to_delete)
 				tree.remove(val_to_delete)
-				assert test_suite == list(tree.in_order())
+				assert test_suite == list(tree)
 		# Have to explicitly test the case where the value being deleted is not in the tree and is greater than
 		# the leftmost child of the right subtree.
 		tree = threadedtree.ThreadedTree([12,25,30,22])
 		assert tree.remove(23) == False
+		# try removing an item that doesn't implement comparisons
+		tree.remove(lambda x: x)
+
+	def test_head_and_tail(self):
+		import copy
+		for trial in xrange(self.trials):
+			test_suite = random.sample(self.bag, self.samples)
+			vals_to_delete = copy.deepcopy(test_suite)
+			random.shuffle(vals_to_delete)
+			tree = threadedtree.ThreadedTree(test_suite)
+			for val in vals_to_delete:
+				vals_to_delete.remove(val)
+				tree.remove(val)
+				assert tree.head.val == min(vals_to_delete)
+				assert tree.tail.val == max(vals_to_delete)
 
 	def test_find(self):
 		for trial in xrange(self.trials):
@@ -76,10 +114,10 @@ class TestUnbalancedThreadedBST(TestCase):
 				test_suite.remove(val)
 			tree = threadedtree.ThreadedTree(test_suite)
 			for sample in test_suite:
-				assert tree.find(sample) == True
+				assert (sample in tree) == True
 			for sample in not_included:
 				print test_suite, sample
-				assert tree.find(sample) == False
+				assert (sample in tree) == False
 
 	def test_len(self):
 		for trial in xrange(self.trials):
@@ -98,6 +136,16 @@ class TestUnbalancedThreadedBST(TestCase):
 			tree = threadedtree.ThreadedTree(test_suite)
 			test_suite.sort()
 			assert str(test_suite) == str(tree)
+
+	def test_reverse(self):
+		for trial in xrange(self.trials):
+			test_suite = random.sample(self.bag, self.small_samples)
+			tree = threadedtree.ThreadedTree(test_suite)
+			test_suite.sort()
+			idx = len(test_suite)-1
+			for val in tree.reverse():
+				assert test_suite[idx] == val
+				idx -= 1
 
 	def test_add(self):
 		for trial in xrange(5):
@@ -146,10 +194,7 @@ class TestUnbalancedThreadedBST(TestCase):
 			assert tree2 != tree3
 			test_suite.sort()
 			assert tree1 == test_suite
-			try:
-				tree1 == {}
-			except TypeError:
-				pass
+			assert (tree1 == {}) == False
 			# We are not responsible for the following comparisons so we just call them for coverage purposes
 			tree1 < tree1
 			tree1 <= tree1

@@ -16,16 +16,17 @@ along with threadedtree.  If not, see <http://www.gnu.org/licenses/>.
 '''
 
 from distutils.core import setup
+from setuptools import find_packages
 
 setup(
     name='ThreadedTree',
-    version='1.0dev',
+    version='1.0.dev3',
     author="M Tyler Springer",
     author_email="mspringer@smu.edu",
     url="http://tylerspringer.com/",
-    packages=['threadedtree',],
+    packages=find_packages(),
     license='GNU Lesser General Public License v3.0',
     description='A carefully implemented double threaded binary search tree in pure python.',
     test_suite='nose.collector',
-    tests_require=['nose']
-	)
+    tests_require=['nose','coverage']
+    )
